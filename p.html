@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPT Market - Mine & Auction NFTs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+        
+        .mining-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                        <span class="text-2xl">⛏️</span>
+                    </div>
+                    <h1 class="text-2xl font-bold">NPT Market</h1>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="bg-white/20 rounded-lg px-4 py-2">
+                        <span class="text-sm">STX Balance: </span>
+                        <span class="font-semibold" id="stxBalance">1,250.00</span>
+                    </div>
+                    <button class="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                        Connect Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Navigation Tabs -->
+        <div class="flex space-x-1 bg-white rounded-lg p-1 shadow-sm mb-8">
+            <button onclick="showTab('mining')" id="miningTab" class="flex-1 py-3 px-4 rounded-md font-medium transition-colors bg-purple-600 text-white">
+                ⛏️ Mining
+            </button>
+            <button onclick="showTab('marketplace')" id="marketplaceTab" class="flex-1 py-3 px-4 rounded-md font-medium transition-colors text-gray-600 hover:text-gray-800">
+                🏪 Marketplace
+            </button>
+            <button onclick="showTab('auctions')" id="auctionsTab" class="flex-1 py-3 px-4 rounded-md font-medium transition-colors text-gray-600 hover:text-gray-800">
+                🔨 Auctions
+            </button>
+            <button onclick="showTab('portfolio')" id="portfolioTab" class="flex-1 py-3 px-4 rounded-md font-medium transition-colors text-gray-600 hover:text-gray-800">
+                💼 My NPTs
+            </button>
+        </div>
+
+        <!-- Mining Section -->
+        <div id="miningSection" class="tab-content">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Mining Interface -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Mine New NPTs</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mining Power (STX)</label>
+                            <div class="relative">
+                                <input type="number" id="miningAmount" value="10" min="1" max="100" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                <span class="absolute right-3 top-3 text-gray-500">STX</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">Higher amounts increase rare NPT chances</p>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h3 class="font-semibold text-gray-800 mb-3">Mining Probabilities</h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Common (70%)</span>
+                                    <span class="text-green-600">✨ Basic NPT</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Rare (25%)</span>
+                                    <span class="text-blue-600">💎 Enhanced NPT</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Legendary (5%)</span>
+                                    <span class="text-purple-600">🌟 Epic NPT</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="startMining()" id="mineButton" 
+                                class="w-full bg-purple-600 text-white py-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors glow-effect">
+                            Start Mining ⛏️
+                        </button>
+
+                        <div id="miningProgress" class="hidden">
+                            <div class="bg-gray-200 rounded-full h-3 mb-3">
+                                <div id="progressBar" class="bg-purple-600 h-3 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                            </div>
+                            <p class="text-center text-gray-600 mining-animation">Mining in progress...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mining Results -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Recent Mining Results</h2>
+                    <div id="miningResults" class="space-y-4">
+                        <div class="text-center text-gray-500 py-8">
+                            <span class="text-4xl mb-4 block">⛏️</span>
+                            <p>Start mining to see your results here!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Marketplace Section -->
+        <div id="marketplaceSection" class="tab-content hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">NPT Marketplace</h2>
+                <div class="flex space-x-4">
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Rarities</option>
+                        <option>Common</option>
+                        <option>Rare</option>
+                        <option>Legendary</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>Price: Low to High</option>
+                        <option>Price: High to Low</option>
+                        <option>Recently Listed</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="marketplaceGrid">
+                <!-- Marketplace items will be populated here -->
+            </div>
+        </div>
+
+        <!-- Auctions Section -->
+        <div id="auctionsSection" class="tab-content hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Live Auctions</h2>
+                <button onclick="showCreateAuction()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                    Create Auction
+                </button>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="auctionsGrid">
+                <!-- Auction items will be populated here -->
+            </div>
+        </div>
+
+        <!-- Portfolio Section -->
+        <div id="portfolioSection" class="tab-content hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">My NPT Collection</h2>
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-2xl font-bold text-purple-600" id="totalNPTs">0</div>
+                            <div class="text-sm text-gray-600">Total NPTs</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-green-600" id="totalValue">0</div>
+                            <div class="text-sm text-gray-600">Total Value (STX)</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-blue-600" id="rareCount">0</div>
+                            <div class="text-sm text-gray-600">Rare+ NPTs</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="portfolioGrid">
+                <!-- User's NPTs will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Auction Modal -->
+    <div id="auctionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold mb-4">Create Auction</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select NPT</label>
+                    <select id="auctionNPTSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option>Choose an NPT to auction...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Starting Bid (STX)</label>
+                    <input type="number" id="startingBid" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Auction Duration</label>
+                    <select id="auctionDuration" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="1">1 Hour</option>
+                        <option value="6">6 Hours</option>
+                        <option value="24">24 Hours</option>
+                        <option value="72">3 Days</option>
+                    </select>
+                </div>
+                <div class="flex space-x-3 pt-4">
+                    <button onclick="createAuction()" class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                        Create Auction
+                    </button>
+                    <button onclick="hideCreateAuction()" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        let userSTX = 1250;
+        let userNPTs = [];
+        let marketplaceItems = [];
+        let activeAuctions = [];
+        let miningInProgress = false;
+
+        // Initialize the application
+        function initializeApp() {
+            generateMarketplaceItems();
+            generateActiveAuctions();
+            updatePortfolioStats();
+            updateSTXBalance();
+        }
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+                tab.classList.remove('bg-purple-600', 'text-white');
+                tab.classList.add('text-gray-600');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Section').classList.remove('hidden');
+            
+            // Add active class to selected tab
+            document.getElementById(tabName + 'Tab').classList.add('bg-purple-600', 'text-white');
+            document.getElementById(tabName + 'Tab').classList.remove('text-gray-600');
+        }
+
+        // Mining Functions
+        function startMining() {
+            if (miningInProgress) return;
+            
+            const amount = parseInt(document.getElementById('miningAmount').value);
+            if (amount > userSTX) {
+                alert('Insufficient STX balance!');
+                return;
+            }
+            
+            miningInProgress = true;
+            userSTX -= amount;
+            updateSTXBalance();
+            
+            // Show mining progress
+            document.getElementById('miningProgress').classList.remove('hidden');
+            document.getElementById('mineButton').disabled = true;
+            document.getElementById('mineButton').textContent = 'Mining...';
+            
+            // Animate progress bar
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 10;
+                document.getElementById('progressBar').style.width = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    completeMining(amount);
+                }
+            }, 200);
+        }
+
+        function completeMining(amount) {
+            // Determine rarity based on amount
+            const random = Math.random();
+            let rarity, emoji, name, value;
+            
+            const rarityBonus = Math.min(amount / 50, 0.3); // Up to 30% bonus for higher amounts
+            
+            if (random < 0.05 + rarityBonus) {
+                rarity = 'Legendary';
+                emoji = '🌟';
+                name = 'Epic NPT #' + Math.floor(Math.random() * 1000);
+                value = Math.floor(50 + Math.random() * 100);
+            } else if (random < 0.25 + rarityBonus) {
+                rarity = 'Rare';
+                emoji = '💎';
+                name = 'Enhanced NPT #' + Math.floor(Math.random() * 1000);
+                value = Math.floor(15 + Math.random() * 35);
+            } else {
+                rarity = 'Common';
+                emoji = '✨';
+                name = 'Basic NPT #' + Math.floor(Math.random() * 1000);
+                value = Math.floor(3 + Math.random() * 12);
+            }
+            
+            const newNPT = {
+                id: Date.now(),
+                name: name,
+                rarity: rarity,
+                emoji: emoji,
+                value: value,
+                minedAt: new Date()
+            };
+            
+            userNPTs.push(newNPT);
+            
+            // Show result
+            const resultsContainer = document.getElementById('miningResults');
+            if (resultsContainer.children[0].textContent.includes('Start mining')) {
+                resultsContainer.innerHTML = '';
+            }
+            
+            const resultElement = document.createElement('div');
+            resultElement.className = 'bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 border-l-4 border-purple-500';
+            resultElement.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">${emoji}</span>
+                        <div>
+                            <div class="font-semibold text-gray-800">${name}</div>
+                            <div class="text-sm text-gray-600">${rarity} • ${value} STX value</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Just mined</div>
+                    </div>
+                </div>
+            `;
+            
+            resultsContainer.insertBefore(resultElement, resultsContainer.firstChild);
+            
+            // Reset mining interface
+            document.getElementById('miningProgress').classList.add('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('mineButton').disabled = false;
+            document.getElementById('mineButton').textContent = 'Start Mining ⛏️';
+            miningInProgress = false;
+            
+            updatePortfolioStats();
+            updatePortfolioGrid();
+        }
+
+        // Marketplace Functions
+        function generateMarketplaceItems() {
+            const items = [
+                { name: 'Crystal NPT #442', rarity: 'Legendary', emoji: '🌟', price: 85, seller: 'CryptoMiner99' },
+                { name: 'Diamond NPT #221', rarity: 'Rare', emoji: '💎', price: 32, seller: 'BlockchainPro' },
+                { name: 'Emerald NPT #156', rarity: 'Rare', emoji: '💎', price: 28, seller: 'STXTrader' },
+                { name: 'Silver NPT #789', rarity: 'Common', emoji: '✨', price: 8, seller: 'NewMiner' },
+                { name: 'Gold NPT #334', rarity: 'Rare', emoji: '💎', price: 45, seller: 'ProCollector' },
+                { name: 'Platinum NPT #667', rarity: 'Legendary', emoji: '🌟', price: 120, seller: 'EliteTrader' }
+            ];
+            
+            marketplaceItems = items.map((item, index) => ({
+                ...item,
+                id: index + 1000
+            }));
+            
+            updateMarketplaceGrid();
+        }
+
+        function updateMarketplaceGrid() {
+            const grid = document.getElementById('marketplaceGrid');
+            grid.innerHTML = marketplaceItems.map(item => `
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">${item.emoji}</div>
+                        <h3 class="font-bold text-gray-800">${item.name}</h3>
+                        <p class="text-sm text-gray-600">${item.rarity}</p>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Price:</span>
+                            <span class="font-bold text-purple-600">${item.price} STX</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Seller:</span>
+                            <span class="text-sm text-gray-800">${item.seller}</span>
+                        </div>
+                        <button onclick="buyNPT(${item.id})" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                            Buy Now
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function buyNPT(itemId) {
+            const item = marketplaceItems.find(i => i.id === itemId);
+            if (!item) return;
+            
+            if (userSTX < item.price) {
+                alert('Insufficient STX balance!');
+                return;
+            }
+            
+            userSTX -= item.price;
+            userNPTs.push({
+                id: Date.now(),
+                name: item.name,
+                rarity: item.rarity,
+                emoji: item.emoji,
+                value: item.price,
+                purchasedAt: new Date()
+            });
+            
+            // Remove from marketplace
+            marketplaceItems = marketplaceItems.filter(i => i.id !== itemId);
+            
+            updateSTXBalance();
+            updateMarketplaceGrid();
+            updatePortfolioStats();
+            updatePortfolioGrid();
+            
+            alert(`Successfully purchased ${item.name} for ${item.price} STX!`);
+        }
+
+        // Auction Functions
+        function generateActiveAuctions() {
+            const auctions = [
+                { 
+                    name: 'Mystic NPT #888', 
+                    rarity: 'Legendary', 
+                    emoji: '🌟', 
+                    currentBid: 95, 
+                    timeLeft: '2h 15m',
+                    bidder: 'HighRoller',
+                    bids: 12
+                },
+                { 
+                    name: 'Rare NPT #445', 
+                    rarity: 'Rare', 
+                    emoji: '💎', 
+                    currentBid: 38, 
+                    timeLeft: '5h 42m',
+                    bidder: 'BidMaster',
+                    bids: 7
+                },
+                { 
+                    name: 'Shiny NPT #123', 
+                    rarity: 'Rare', 
+                    emoji: '💎', 
+                    currentBid: 22, 
+                    timeLeft: '1d 3h',
+                    bidder: 'CryptoFan',
+                    bids: 4
+                }
+            ];
+            
+            activeAuctions = auctions.map((auction, index) => ({
+                ...auction,
+                id: index + 2000
+            }));
+            
+            updateAuctionsGrid();
+        }
+
+        function updateAuctionsGrid() {
+            const grid = document.getElementById('auctionsGrid');
+            grid.innerHTML = activeAuctions.map(auction => `
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">${auction.emoji}</div>
+                        <h3 class="font-bold text-gray-800">${auction.name}</h3>
+                        <p class="text-sm text-gray-600">${auction.rarity}</p>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Current Bid:</span>
+                            <span class="font-bold text-green-600">${auction.currentBid} STX</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Time Left:</span>
+                            <span class="text-sm font-medium text-red-600">${auction.timeLeft}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Bids:</span>
+                            <span class="text-sm text-gray-800">${auction.bids}</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <input type="number" placeholder="Bid amount" min="${auction.currentBid + 1}" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <button onclick="placeBid(${auction.id})" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                Bid
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function placeBid(auctionId) {
+            const auction = activeAuctions.find(a => a.id === auctionId);
+            if (!auction) return;
+            
+            const bidInput = event.target.previousElementSibling;
+            const bidAmount = parseInt(bidInput.value);
+            
+            if (!bidAmount || bidAmount <= auction.currentBid) {
+                alert('Bid must be higher than current bid!');
+                return;
+            }
+            
+            if (bidAmount > userSTX) {
+                alert('Insufficient STX balance!');
+                return;
+            }
+            
+            auction.currentBid = bidAmount;
+            auction.bidder = 'You';
+            auction.bids += 1;
+            
+            updateAuctionsGrid();
+            alert(`Bid placed successfully! You are now the highest bidder at ${bidAmount} STX.`);
+        }
+
+        // Portfolio Functions
+        function updatePortfolioStats() {
+            const totalNPTs = userNPTs.length;
+            const totalValue = userNPTs.reduce((sum, npt) => sum + npt.value, 0);
+            const rareCount = userNPTs.filter(npt => npt.rarity !== 'Common').length;
+            
+            document.getElementById('totalNPTs').textContent = totalNPTs;
+            document.getElementById('totalValue').textContent = totalValue;
+            document.getElementById('rareCount').textContent = rareCount;
+        }
+
+        function updatePortfolioGrid() {
+            const grid = document.getElementById('portfolioGrid');
+            
+            if (userNPTs.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-500">
+                        <span class="text-6xl mb-4 block">💼</span>
+                        <p class="text-lg">No NPTs in your collection yet</p>
+                        <p class="text-sm">Start mining to build your collection!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = userNPTs.map(npt => `
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">${npt.emoji}</div>
+                        <h3 class="font-bold text-gray-800">${npt.name}</h3>
+                        <p class="text-sm text-gray-600">${npt.rarity}</p>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Value:</span>
+                            <span class="font-bold text-purple-600">${npt.value} STX</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="sellNPT(${npt.id})" class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                Sell
+                            </button>
+                            <button onclick="auctionNPT(${npt.id})" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                Auction
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function sellNPT(nptId) {
+            const npt = userNPTs.find(n => n.id === nptId);
+            if (!npt) return;
+            
+            const sellPrice = Math.floor(npt.value * 0.9); // 10% marketplace fee
+            
+            if (confirm(`Sell ${npt.name} for ${sellPrice} STX? (10% marketplace fee applied)`)) {
+                userSTX += sellPrice;
+                userNPTs = userNPTs.filter(n => n.id !== nptId);
+                
+                updateSTXBalance();
+                updatePortfolioStats();
+                updatePortfolioGrid();
+                
+                alert(`Successfully sold ${npt.name} for ${sellPrice} STX!`);
+            }
+        }
+
+        function auctionNPT(nptId) {
+            const npt = userNPTs.find(n => n.id === nptId);
+            if (!npt) return;
+            
+            // Populate auction modal
+            const select = document.getElementById('auctionNPTSelect');
+            select.innerHTML = `<option value="${npt.id}">${npt.name} (${npt.rarity})</option>`;
+            document.getElementById('startingBid').value = Math.floor(npt.value * 0.8);
+            
+            showCreateAuction();
+        }
+
+        // Auction Modal Functions
+        function showCreateAuction() {
+            document.getElementById('auctionModal').classList.remove('hidden');
+            document.getElementById('auctionModal').classList.add('flex');
+        }
+
+        function hideCreateAuction() {
+            document.getElementById('auctionModal').classList.add('hidden');
+            document.getElementById('auctionModal').classList.remove('flex');
+        }
+
+        function createAuction() {
+            const nptId = parseInt(document.getElementById('auctionNPTSelect').value);
+            const startingBid = parseInt(document.getElementById('startingBid').value);
+            const duration = parseInt(document.getElementById('auctionDuration').value);
+            
+            if (!nptId || !startingBid) {
+                alert('Please fill in all fields!');
+                return;
+            }
+            
+            const npt = userNPTs.find(n => n.id === nptId);
+            if (!npt) return;
+            
+            // Create new auction
+            const newAuction = {
+                id: Date.now(),
+                name: npt.name,
+                rarity: npt.rarity,
+                emoji: npt.emoji,
+                currentBid: startingBid,
+                timeLeft: duration + 'h',
+                bidder: 'No bids yet',
+                bids: 0
+            };
+            
+            activeAuctions.push(newAuction);
+            userNPTs = userNPTs.filter(n => n.id !== nptId);
+            
+            updateAuctionsGrid();
+            updatePortfolioStats();
+            updatePortfolioGrid();
+            hideCreateAuction();
+            
+            alert(`Auction created successfully! Your ${npt.name} is now live with a starting bid of ${startingBid} STX.`);
+        }
+
+        // Utility Functions
+        function updateSTXBalance() {
+            document.getElementById('stxBalance').textContent = userSTX.toFixed(2);
+        }
+
+        // Initialize the application when page loads
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'976a4eb371017f91',t:'MTc1NjQ1MjI1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
